@@ -15,3 +15,6 @@ preloadtest: nv12test
 mesatest: nv12test
 	LD_LIBRARY_PATH=/opt/mesa/lib/x86_64-linux-gnu ./nv12test
 
+clean:
+	rm -f *.o nv12test
+

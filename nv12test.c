@@ -147,6 +147,8 @@ int main(int argc, char* argv[])
 	const uint32_t usage = 
 		0
 //		| GBM_BO_USE_RENDERING
+		| GBM_BO_USE_WRITE
+		| GBM_BO_USE_LINEAR
 		| GBM_BO_USE_SCANOUT
 		;
 
@@ -184,10 +186,32 @@ int main(int argc, char* argv[])
 
 #if 0
 	// We can only call bo_write for a buffer object that has usage RENDERING.
-	gbm_bo_write(bo, buf, bufsz);
+	gbm_bo_write(bo, buf, w /*bufsz*/);
 #endif
 
+	uint32_t stride = 0;
+	void* mapping = 0;
+	uint8_t* m = gbm_bo_map
+	(
+		bo,
+		0,0,
+		w,h,
+		GBM_BO_TRANSFER_WRITE,
+		&stride,
+		&mapping
+	);
+
+	fprintf(stderr, "m = %p\n", m);
+	fprintf(stderr, "mapping = %p\n", mapping);
+
+	memcpy(m, buf, bufsz);
+
+	gbm_bo_unmap(bo, mapping);
+
+	// It would be nice if we could now display the buffer somehow.
+
 	gbm_bo_destroy(bo);
+
 	close(fd);
 
 	return 0;
