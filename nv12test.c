@@ -145,10 +145,9 @@ int main(int argc, char* argv[])
 	fprintf(stderr, "Using backend %s\n", bename);
 
 	const uint32_t usage = 
-		GBM_BO_USE_RENDERING
-		;
-//		  GBM_BO_USE_SCANOUT
+		0
 //		| GBM_BO_USE_RENDERING
+		| GBM_BO_USE_SCANOUT
 		;
 
 	for (int i=0; candidates[i]; ++i)
@@ -164,14 +163,32 @@ int main(int argc, char* argv[])
 	const uint8_t* buf = make_checkerboard_nv12(IMW, IMH, &bufsz);
 
 	const uint32_t fmt = GBM_FORMAT_NV12;
-	struct gbm_bo* bo = gbm_bo_create(gbm, IMW, IMH, fmt, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
+	struct gbm_bo* bo = gbm_bo_create(gbm, IMW, IMH, fmt, usage);
 	if (!bo)
 	{
 		fprintf(stderr, "Failed to create buffer object.\n");
 		exit(2);
 	}
 
+	const uint32_t w = gbm_bo_get_width(bo);
+	const uint32_t h = gbm_bo_get_height(bo);
+	const int planecount = gbm_bo_get_plane_count(bo);
+	const uint32_t bpp = gbm_bo_get_bpp(bo);
+	fprintf(stderr, "Created GBM buffer object of format NV12 and dimension %dx%d\n", w,h);
+	fprintf(stderr, "Bpp: %d\n", bpp);
+	for (int p=0; p<planecount; ++p)
+	{
+		const uint32_t stride = gbm_bo_get_stride_for_plane(bo, 0);
+		fprintf(stderr, "Stride for plane %d: %d\n", p, stride);
+	}
+
+#if 0
+	// We can only call bo_write for a buffer object that has usage RENDERING.
 	gbm_bo_write(bo, buf, bufsz);
+#endif
+
+	gbm_bo_destroy(bo);
+	close(fd);
 
 	return 0;
 }
