@@ -11,9 +11,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
 
 #include <gbm.h>
 #include <drm/drm_fourcc.h>
+
+#include <xf86drm.h>
+#include <xf86drmMode.h>
 
 #define IMW	1280
 #define IMH	720
@@ -208,7 +214,81 @@ int main(int argc, char* argv[])
 
 	gbm_bo_unmap(bo, mapping);
 
+	union gbm_bo_handle handle = gbm_bo_get_handle(bo);
+	if (handle.s32 < 0)
+	{
+		fprintf(stderr, "gbm_bo_get_handle failed\n");
+	}
+
 	// It would be nice if we could now display the buffer somehow.
+	// We could attach it to a framebuffer:
+
+	const char* s = getenv("XDG_SESSION_TYPE");
+	const int on_tty = (!strcmp(s, "tty"));
+
+	if (on_tty)
+	{
+
+		if (drmSetClientCap(fd, DRM_CLIENT_CAP_ATOMIC, 1) != 0)
+		{
+		fprintf(stderr, "DRM_CLIENT_CAP_ATOMIC could not be set: %s\n", strerror(errno));
+		}
+		drmModeAtomicReq* req = drmModeAtomicAlloc();
+
+		uint32_t handles[4] =
+		{
+			handle.s32,
+			handle.s32,
+			0,
+			0,
+		};
+		uint32_t strides[4] =
+		{
+			gbm_bo_get_stride(bo),
+			gbm_bo_get_stride(bo),
+			0,
+			0,
+		};
+		uint32_t offsets[4] = { 0,0,0,0, };
+		uint32_t fb_id=0;
+		int add_rv = drmModeAddFB2(fd, IMW, IMH, DRM_FORMAT_NV12, handles, strides, offsets, &fb_id, 0);
+		if (add_rv < 0)
+		{
+			fprintf(stderr, "drmModeAddFB2() failed: %s\n", strerror(errno));
+		}
+
+		const uint32_t commit_flags = DRM_MODE_ATOMIC_ALLOW_MODESET;
+		int commit_rv = drmModeAtomicCommit(fd, req, commit_flags, NULL);
+		if (commit_rv != 0)
+		{
+			fprintf(stderr, "drmModeAtomicCommit failed: %s\n", strerror(errno));
+		}
+
+		int crtc_id = 80;
+		int conn_id = 236;
+		drmModeModeInfo* mode_inf = 0;
+		int count=0;
+		int setcrtc_rv = drmModeSetCrtc
+		(
+			fd,
+			crtc_id,
+			fb_id,
+			0,0,
+			&conn_id,
+			count,
+			mode_inf
+		);
+		if (setcrtc_rv != 0)
+		{
+			fprintf(stderr, "drmModeSetCrtc failed: %s\n", strerror(errno));
+		}
+
+		sleep(8);
+
+		drmModeAtomicFree(req);
+	}
+
+	// Clean up
 
 	gbm_bo_destroy(bo);
 
