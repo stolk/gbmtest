@@ -1,7 +1,7 @@
 # gbmtest
 Test program to see which formats can be used by libgbm.
 
-This program is also used to demonstrate the difference between libgm of mesa, and minigbm that is bundled with chromium.
+This program is also used to demonstrate the difference between libgbm of mesa, and minigbm that is bundled with chromium.
 
 If the libminigbm.so is preloaded, more formats are supported, including NV12.
 
