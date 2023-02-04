@@ -264,8 +264,8 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "drmModeAtomicCommit failed: %s\n", strerror(errno));
 		}
 
-		int crtc_id = 80;
-		int conn_id = 236;
+		uint32_t crtc_id = 80;
+		uint32_t conn_id = 236;
 		drmModeModeInfo* mode_inf = 0;
 		int count=0;
 		int setcrtc_rv = drmModeSetCrtc
