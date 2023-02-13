@@ -88,3 +88,8 @@ m = 0x7fd678ca7000
 mapping = 0x55d21c5c4270
 ```
 
+## Dependencies
+
+ * pkgcfg
+ * libdrm-dev
+ * libgbm-dev
